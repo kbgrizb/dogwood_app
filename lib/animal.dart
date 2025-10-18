@@ -1,12 +1,13 @@
 
+
 class Animal {
   Animal(
-    {required this.name
-    //add vaccine etc info here
+    {required this.name,
+    required this.vaccineStatus
     });
 
 
   final String name;
-  //and here
+  bool vaccineStatus;
 
 }

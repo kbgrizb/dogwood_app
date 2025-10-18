@@ -1,10 +1,11 @@
 
+import 'package:dogwood_app/animal.dart';
 import 'package:flutter/material.dart';           
 
 
 class DetailPage extends StatefulWidget {
-  final String title;
-  const DetailPage({super.key, required this.title});
+  final Animal animal;
+  const DetailPage({super.key, required this.animal});
 
   @override
   State<DetailPage> createState() => DetailPageState();
@@ -23,6 +24,12 @@ class DetailPageState extends State<DetailPage>{
   DateTime? dewormTime;
   DateTime? fleaTime;
   DateTime? fecalTime;
+
+  @override
+  void initState() {
+    super.initState();
+    vaccineCheck = widget.animal.vaccineStatus;
+  }
 
   final List<String> vaccineTypes = [
     'DAP',
@@ -63,7 +70,7 @@ class DetailPageState extends State<DetailPage>{
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text(widget.title)),
+      appBar: AppBar(title: Text(widget.animal.name)),
       body: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -240,7 +247,7 @@ class DetailPageState extends State<DetailPage>{
           ),
       ),
       floatingActionButton: FloatingActionButton(
-      onPressed: () {},
+      onPressed: () {widget.animal.vaccineStatus = vaccineCheck; Navigator.pop(context, widget.animal);},
       backgroundColor: Colors.lightBlue,
       foregroundColor: Colors.white,
       child: Text('DONE'),

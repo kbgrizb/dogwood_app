@@ -61,12 +61,22 @@ class _HomePageState extends State<HomePage> {
                     borderRadius: BorderRadius.circular(8),
                     ),
                     title: Text(animal.name),
-                    onTap: () {
-                      Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (context) => DetailPage(title: animal.name)),
+                    onTap: () async {
+                      final updatedAnimal = await Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => DetailPage(animal: animal),
+                        ),
                       );
-                    },
+                      if (updatedAnimal != null) { //animal data only changed if DONE button is pressed, not back arrow (back arrow returns null)
+                        setState(() {
+                        final index = controller.animals.indexOf(animal);
+                        if (index != -1) {
+                          controller.animals[index] = updatedAnimal;
+                        }
+                      });
+                    }
+                  },
                   );
                 }).toList(),
                   ),
