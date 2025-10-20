@@ -1,8 +1,12 @@
 
 
+import 'package:cloud_firestore/cloud_firestore.dart';
+
 class Animal {
   Animal(
-    {required this.name,
+    {
+    this.id,
+    required this.name,
 
     required this.vaccineStatus,
     this.vaccineType,
@@ -21,7 +25,7 @@ class Animal {
     this.fecalTime,
     });
 
-
+  String? id;
   final String name;
 
   bool vaccineStatus;
@@ -39,5 +43,49 @@ class Animal {
   bool fecalStatus;
   String? fecalLocation;
   DateTime? fecalTime;
+
+   static DateTime? _parseDate(dynamic value) {
+    if (value == null) return null;
+    if (value is Timestamp) return value.toDate();
+    if (value is String) return DateTime.tryParse(value);
+    return null;
+  }
+
+  Map<String, dynamic> toMap() {
+    return {
+      'name': name,
+      'vaccineStatus': vaccineStatus,
+      'vaccineType': vaccineType,
+      'vaccineTime': vaccineTime != null ? Timestamp.fromDate(vaccineTime!) : null,
+      'dewormStatus': dewormStatus,
+      'dewormType': dewormType,
+      'dewormTime': dewormTime != null ? Timestamp.fromDate(dewormTime!) : null,
+      'fleaStatus': fleaStatus,
+      'fleaType': fleaType,
+      'fleaTime': fleaTime != null ? Timestamp.fromDate(fleaTime!) : null,
+      'fecalStatus': fecalStatus,
+      'fecalLocation': fecalLocation,
+      'fecalTime': fecalTime != null ? Timestamp.fromDate(fecalTime!) : null,
+    };
+  }
+
+  factory Animal.fromMap(Map<String, dynamic> map, {String? id}) {
+    return Animal(
+      id: id,
+      name: map['name'] ?? '',
+      vaccineStatus: map['vaccineStatus'] ?? false,
+      vaccineType: map['vaccineType'],
+      vaccineTime: _parseDate(map['vaccineTime']),
+      dewormStatus: map['dewormStatus'] ?? false,
+      dewormType: map['dewormType'],
+      dewormTime: _parseDate(map['dewormTime']),
+      fleaStatus: map['fleaStatus'] ?? false,
+      fleaType: map['fleaType'],
+      fleaTime: _parseDate(map['fleaTime']),
+      fecalStatus: map['fecalStatus'] ?? false,
+      fecalLocation: map['fecalLocation'],
+      fecalTime: _parseDate(map['fecalTime']),
+    );
+  }
 
 }

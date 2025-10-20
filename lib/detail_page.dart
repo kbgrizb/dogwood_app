@@ -1,3 +1,4 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:dogwood_app/animal.dart';
 import 'package:flutter/material.dart';
 
@@ -42,6 +43,36 @@ class DetailPageState extends State<DetailPage> {
     fecalLocation = widget.animal.fecalLocation;
     fecalTime = widget.animal.fecalTime;
   }
+
+  Future<void> _saveToFirestore() async {
+  final docRef = FirebaseFirestore.instance.collection('animals').doc(widget.animal.id);
+  // Update the current animal instance fields first from state variables
+  widget.animal.vaccineStatus = vaccineCheck;
+  widget.animal.vaccineType = vaccineType;
+  widget.animal.vaccineTime = vaccineTime;
+  widget.animal.dewormStatus = dewormCheck;
+  widget.animal.dewormType = dewormType;
+  widget.animal.dewormTime = dewormTime;
+  widget.animal.fleaStatus = fleaCheck;
+  widget.animal.fleaType = fleaType;
+  widget.animal.fleaTime = fleaTime;
+  widget.animal.fecalStatus = fecalCheck;
+  widget.animal.fecalLocation = fecalLocation;
+  widget.animal.fecalTime = fecalTime;
+
+  // Save the animal document to Firestore
+  try {
+    await docRef.set(widget.animal.toMap(), SetOptions(merge: true));
+    print('Animal saved successfully');
+  } catch (e) {
+    print('Error saving animal: $e');
+  }
+}
+
+Future<void> _deleteFromFirestore() async {
+  final docRef = FirebaseFirestore.instance.collection('animals').doc(widget.animal.id);
+  await docRef.delete();
+}
 
   final List<String> vaccineTypes = ['DAP', 'DAPL', 'LEPTO', 'FVRCP', 'Other'];
 
@@ -318,7 +349,8 @@ class DetailPageState extends State<DetailPage> {
                     ),
                   );
                   if (confirmDelete == true) {
-                    Navigator.pop(context, 'delete'); // User confirmed deletion
+                    await _deleteFromFirestore();
+                    Navigator.pop(context); // User confirmed deletion
                   }
                 },
                 backgroundColor: Colors.white,
@@ -331,7 +363,7 @@ class DetailPageState extends State<DetailPage> {
                 ),
               ),
               FloatingActionButton(
-                onPressed: () {
+                onPressed: () async {
                   widget.animal.vaccineStatus = vaccineCheck;
                   widget.animal.vaccineType = vaccineType;
                   widget.animal.vaccineTime = vaccineTime;
@@ -347,11 +379,14 @@ class DetailPageState extends State<DetailPage> {
                   widget.animal.fecalStatus = fecalCheck;
                   widget.animal.fecalLocation = fecalLocation;
                   widget.animal.fecalTime = fecalTime;
-                  Navigator.pop(context, widget.animal);
+                  print('Saving animal...');
+                  await _saveToFirestore();
+                  print('Save complete, popping...');
+                  Navigator.pop(context);
                 },
                 backgroundColor: Colors.lightBlue,
                 foregroundColor: Colors.white,
-                child: Text('DONE'),
+                child: Text('SAVE'),
               ),
             ],
           ),

@@ -1,112 +1,116 @@
 // Copyright 2022 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
-// ----------------ask about this license stuff---------------------
 
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:dogwood_app/animal.dart';
 import 'package:dogwood_app/animal_dialog.dart';
-import 'package:dogwood_app/animal_list.dart';
 import 'package:dogwood_app/detail_page.dart';
-import 'package:firebase_auth/firebase_auth.dart' 
-    hide EmailAuthProvider, PhoneAuthProvider;    
-import 'package:flutter/material.dart';       
-import 'package:provider/provider.dart';         
+import 'package:firebase_auth/firebase_auth.dart'
+    hide EmailAuthProvider, PhoneAuthProvider;
+import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
-import 'app_state.dart';                          
-import 'src/authentication.dart';  
-
+import 'app_state.dart';
+import 'src/authentication.dart';
 
 class HomePage extends StatefulWidget {
   HomePage({super.key});
 
-  final AnimalListController controller = AnimalListController();
   final TextEditingController textController = TextEditingController();
 
-   @override
+  @override
   State<HomePage> createState() => _HomePageState();
 }
 
 class _HomePageState extends State<HomePage> {
-  final AnimalListController controller = AnimalListController();
+  Future<void> handleNewAnimal(String animalName) async {
+    Animal newAnimal = Animal(
+      name: animalName,
+      vaccineStatus: false,
+      dewormStatus: false,
+      fleaStatus: false,
+      fecalStatus: false,
+    );
 
-  void handleNewAnimal(String animalName) {
-    setState(() {
-      controller.addAnimal(animalName);
-    });
+    DocumentReference docRef =
+        await FirebaseFirestore.instance.collection('animals').add(newAnimal.toMap());
+    newAnimal.id = docRef.id; // assign Firestore document id to the new animal
   }
-
-
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('Home Page')),
       body: Consumer<ApplicationState>(
-        builder: (context, appState, _) => ListView(
-          children: [
-            const SizedBox(height: 8),
-            AuthFunc(
-              loggedIn: appState.loggedIn,
-              signOut: () {
-                FirebaseAuth.instance.signOut();
-              },
-            ),
-            if (appState.loggedIn) ...[  //make sure only people who are logged in can see the animal information
-                Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 2.0, horizontal: 10.0),
-                  child: Column(
-                  children: controller.animals.map((animal) {
-                  return ListTile(
-                    shape: RoundedRectangleBorder(
-                    side: BorderSide(width: 2, color: Colors.lightBlue),
-                    borderRadius: BorderRadius.circular(8),
-                    ),
-                    title: Text(animal.name),
-                    onTap: () async {
-                      dynamic result = await Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => DetailPage(animal: animal),
-                        ),
-                      );
-                      if (result == 'delete') {
-                        setState(() {
-                        controller.animals.remove(animal);
-                        });
-                      } else if (result is Animal) { //animal data only changed if DONE button is pressed, not back arrow (back arrow returns null)
-                        setState(() {
-                        final index = controller.animals.indexOf(animal);
-                        if (index != -1) {
-                          controller.animals[index] = result;
-                        }
-                      });
+        builder: (context, appState, _) {
+          return ListView(
+            children: [
+              const SizedBox(height: 8),
+              AuthFunc(
+                loggedIn: appState.loggedIn,
+                signOut: () {
+                  FirebaseAuth.instance.signOut();
+                },
+              ),
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 2.0, horizontal: 10.0),
+                child: StreamBuilder<QuerySnapshot>(
+                  stream: FirebaseFirestore.instance.collection('animals').snapshots(),
+                  builder: (context, snapshot) {
+                    if (snapshot.hasError) {
+                      return Text('Please log in to view animals');
                     }
+                    if (!snapshot.hasData) {
+                      return Center(child: CircularProgressIndicator());
+                    }
+                    final animals = snapshot.data!.docs
+                        .map((doc) =>
+                            Animal.fromMap(doc.data() as Map<String, dynamic>, id: doc.id))
+                        .toList();
+
+                    return Column(
+                      children: animals.map((animal) {
+                        return ListTile(
+                          shape: RoundedRectangleBorder(
+                            side: BorderSide(width: 2, color: Colors.lightBlue),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          title: Text(animal.name),
+                          onTap: () async {
+                            dynamic result = await Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => DetailPage(animal: animal),
+                              ),
+                            );
+                          },
+                        );
+                      }).toList(),
+                    );
                   },
-                  );
-                }).toList(),
-                  ),
-            ),
-          ],
-        ],
-        ),
+                ),
+              ),
+            ],
+          );
+        },
       ),
       floatingActionButton: Consumer<ApplicationState>(
-    builder: (context, appState, _) => appState.loggedIn //make sure only people who are logged in in can add animals
-        ? FloatingActionButton(
-            key: const Key("AddButton"),
-            backgroundColor: Colors.lightBlue,
-            foregroundColor: Colors.white,
-            child: const Icon(Icons.add),
-            onPressed: () {
-              showDialog(
-                context: context,
-                builder: (_) => AnimalDialog(onListAdded: handleNewAnimal),
-              );
-            },
-          )
-        : SizedBox.shrink(),), //this is so it doesn't yell at me for returning null
+        builder: (context, appState, _) => appState.loggedIn
+            ? FloatingActionButton(
+                key: const Key("AddButton"),
+                backgroundColor: Colors.lightBlue,
+                foregroundColor: Colors.white,
+                child: const Icon(Icons.add),
+                onPressed: () {
+                  showDialog(
+                    context: context,
+                    builder: (_) => AnimalDialog(onListAdded: handleNewAnimal),
+                  );
+                },
+              )
+            : SizedBox.shrink(),
+      ),
     );
   }
 }
-
-

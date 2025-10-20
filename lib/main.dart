@@ -3,6 +3,8 @@
 // found in the LICENSE file.
 // ----------------ask about this license stuff---------------------
 
+import 'package:dogwood_app/firebase_options.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_ui_auth/firebase_ui_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart'; 
@@ -12,9 +14,11 @@ import 'package:provider/provider.dart';
 import 'app_state.dart'; 
 import 'home_page.dart';
 
-void main() {
+Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-
+  await Firebase.initializeApp(
+  options: DefaultFirebaseOptions.currentPlatform,
+);
   runApp(ChangeNotifierProvider(
     create: (context) => ApplicationState(),
     builder: ((context, child) => const App()),
