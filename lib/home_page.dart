@@ -33,9 +33,10 @@ class _HomePageState extends State<HomePage> {
       fecalStatus: false,
     );
 
-    DocumentReference docRef =
-        await FirebaseFirestore.instance.collection('animals').add(newAnimal.toMap());
-    newAnimal.id = docRef.id; // assign Firestore document id to the new animal
+    DocumentReference docRef = await FirebaseFirestore.instance
+        .collection('animals')
+        .add({...newAnimal.toMap(), 'createdAt': FieldValue.serverTimestamp()});
+    newAnimal.id = docRef.id;
   }
 
   @override
@@ -54,9 +55,15 @@ class _HomePageState extends State<HomePage> {
                 },
               ),
               Padding(
-                padding: const EdgeInsets.symmetric(vertical: 2.0, horizontal: 10.0),
+                padding: const EdgeInsets.symmetric(
+                  vertical: 2.0,
+                  horizontal: 10.0,
+                ),
                 child: StreamBuilder<QuerySnapshot>(
-                  stream: FirebaseFirestore.instance.collection('animals').snapshots(),
+                  stream: FirebaseFirestore.instance
+                      .collection('animals')
+                      .orderBy('createdAt', descending: true)
+                      .snapshots(),
                   builder: (context, snapshot) {
                     if (snapshot.hasError) {
                       return Text('Please log in to view animals');
@@ -65,8 +72,12 @@ class _HomePageState extends State<HomePage> {
                       return Center(child: CircularProgressIndicator());
                     }
                     final animals = snapshot.data!.docs
-                        .map((doc) =>
-                            Animal.fromMap(doc.data() as Map<String, dynamic>, id: doc.id))
+                        .map(
+                          (doc) => Animal.fromMap(
+                            doc.data() as Map<String, dynamic>,
+                            id: doc.id,
+                          ),
+                        )
                         .toList();
 
                     return Column(
@@ -81,7 +92,8 @@ class _HomePageState extends State<HomePage> {
                             dynamic result = await Navigator.push(
                               context,
                               MaterialPageRoute(
-                                builder: (context) => DetailPage(animal: animal),
+                                builder: (context) =>
+                                    DetailPage(animal: animal),
                               ),
                             );
                           },
